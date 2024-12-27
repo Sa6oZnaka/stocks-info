@@ -4,11 +4,32 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const app = express();
+const mysql = require('mysql2');
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(cors());
 app.use(bodyParser.json());
+
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'root', 
+  database: 'stocks_db'   
+});
+
+function saveStockDataToDatabase(companyName, stockPrice) {
+  const query = 'INSERT INTO stocks (company_name, stock_price) VALUES (?, ?)';
+  
+  connection.execute(query, [companyName, stockPrice], (err, results) => {
+    if (err) {
+      console.error('Error inserting data into the database:', err);
+      return;
+    }
+    console.log(`Inserted ${companyName} with stock price ${stockPrice} into the database.`);
+  });
+}
+
 
 // API ключ от Alpha Vantage
 const API_KEY = '9UQKA2TTIKHPLTLZ'; 
@@ -61,6 +82,12 @@ app.get('/', async (req, res) => {
   successfulData.forEach(stock => {
     const companyName = stock['Meta Data'] ? stock['Meta Data']['2. Symbol'] : 'Unknown';
     const latestPrice = stock['Time Series (5min)'] ? stock['Time Series (5min)'][Object.keys(stock['Time Series (5min)'])[0]]['4. close'] : 'N/A';
+
+    // Записваме в базата данни
+    if (latestPrice !== 'N/A') {
+      console.log("Save to DB - " + companyName + " at " + latestPrice);
+      saveStockDataToDatabase(companyName, parseFloat(latestPrice));
+    }
 
     htmlContent += `
       <tr>
