@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getCompaniesAndLatestPrices } = require('./database');
+const { getCompaniesAndLatestPrices, getCompanyInfo } = require('./database');
 const { fetchStockData, fetchCompanyNews } = require('./api');
 
 // Начална страница
@@ -57,11 +57,19 @@ router.get('/', async (req, res) => {
 router.get('/company/:symbol', async (req, res) => {
   const symbol = req.params.symbol;
   try {
-    const stockData = await fetchStockData(symbol);
+
+    const companyInfo = await getCompanyInfo(symbol);
+    //const stockData = await fetchStockData(symbol);
     const newsData = await fetchCompanyNews(symbol);
 
-    const companyName = stockData['Meta Data'] ? stockData['Meta Data']['2. Symbol'] : 'Unknown';
-    const latestPrice = stockData['Time Series (5min)'] ? stockData['Time Series (5min)'][Object.keys(stockData['Time Series (5min)'])[0]]['4. close'] : 'N/A';
+    const info = companyInfo[0];
+
+    const companyName = info.name || 'Unknown';
+    const latestPrice = info.stock_price || 'N/A';
+    const industry = info.industry || 'N/A';
+    const marketCap = info.marketCap ? formatMarketCap(info.marketCap) : 'N/A';
+    const ceo = info.ceo || 'N/A';
+    const headquarters = info.headquarters || 'N/A';
 
     let newsHTML = '';
     if (newsData && newsData.articles) {
@@ -86,8 +94,11 @@ router.get('/company/:symbol', async (req, res) => {
             <a href="/">Home</a>
             <a href="/news">News</a>
           </div>
-          <h1>${companyName} - Company Overview</h1>
           <h2>Stock Price: ${latestPrice}</h2>
+          <h2><strong>Industry:</strong> ${industry}</h2>
+          <h2><strong>Market Cap:</strong> ${marketCap}</h2>
+          <h2><strong>CEO:</strong> ${ceo}</h2>
+          <h2><strong>Headquarters:</strong> ${headquarters}</h2>
           <div class="company-news">
             <h2>Latest News</h2>
             ${newsHTML}
@@ -106,6 +117,17 @@ router.get('/company/:symbol', async (req, res) => {
     res.status(500).send('Error fetching company data');
   }
 });
+
+function formatMarketCap(marketCap) {
+    if (marketCap >= 1e12) {
+      return (marketCap / 1e12).toFixed(2) + ' Trillion';
+    } else if (marketCap >= 1e9) {
+      return (marketCap / 1e9).toFixed(2) + ' Billion';
+    } else if (marketCap >= 1e6) {
+      return (marketCap / 1e6).toFixed(2) + ' Million';
+    }
+    return marketCap;
+  }
 
 // Новини
 router.get('/news', async (req, res) => {

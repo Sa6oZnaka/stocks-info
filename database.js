@@ -43,6 +43,45 @@ function getCompaniesAndLatestPrices() {
   });
 }
 
+function getCompanyInfo(symbol) {
+    return new Promise((resolve, reject) => {
+      const query = `
+        SELECT 
+            c.id,
+            c.name,
+            c.symbol,
+            c.industry,
+            c.marketCap,
+            c.ceo,
+            c.headquarters,
+            s.stock_price
+        FROM 
+            companies c
+        JOIN 
+            (
+                SELECT company_name, MAX(last_updated) AS latest_update
+                FROM stocks
+                GROUP BY company_name
+            ) latest_stock
+        ON 
+            c.symbol = latest_stock.company_name
+        JOIN 
+            stocks s 
+        ON 
+            s.company_name = latest_stock.company_name AND s.last_updated = latest_stock.latest_update
+        WHERE c.symbol = ?;
+      `;
+      
+      connection.execute(query, [symbol], (err, results) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(results);
+        }
+      });
+    });
+}
+
 function saveStockDataToDatabase(companyName, stockPrice) {
   const query = 'INSERT INTO stocks (company_name, stock_price) VALUES (?, ?)';
   
@@ -55,4 +94,4 @@ function saveStockDataToDatabase(companyName, stockPrice) {
   });
 }
 
-module.exports = { connection, getCompaniesAndLatestPrices, saveStockDataToDatabase };
+module.exports = { connection, getCompaniesAndLatestPrices, saveStockDataToDatabase, getCompanyInfo };
