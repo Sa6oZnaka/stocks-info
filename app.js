@@ -115,6 +115,75 @@ app.get('/', async (req, res) => {
   }
 });
 
+app.get('/company/:symbol', async (req, res) => {
+  const symbol = req.params.symbol; 
+  try {
+    const stockData = await fetchStockData(symbol);
+  
+    const newsData = await fetchCompanyNews(symbol);
+
+    const companyName = stockData['Meta Data'] ? stockData['Meta Data']['2. Symbol'] : 'Unknown';
+    const latestPrice = stockData['Time Series (5min)'] ? stockData['Time Series (5min)'][Object.keys(stockData['Time Series (5min)'])[0]]['4. close'] : 'N/A';
+
+    let newsHTML = '';
+    if (newsData && newsData.articles) {
+      newsData.articles.forEach(article => {
+        newsHTML += `
+          <div class="news-item">
+            <h3><a href="${article.url}" target="_blank">${article.title}</a></h3>
+            <p>${article.description}</p>
+          </div>
+        `;
+      });
+    }
+
+    let htmlContent = `
+      <html>
+        <head>
+          <title>${companyName} - Company Overview</title>
+          <link rel="stylesheet" href="/styles.css">
+        </head>
+        <body>
+          <div class="navbar">
+            <a href="/">Home</a>
+            <a href="/news">News</a>
+          </div>
+          <h1>${companyName} - Company Overview</h1>
+          <h2>Stock Price: ${latestPrice}</h2>
+          <div class="company-news">
+            <h2>Latest News</h2>
+            ${newsHTML}
+          </div>
+          <footer>
+            <p>&copy; 2024 Stock Data Inc. All rights reserved.</p>
+          </footer>
+        </body>
+      </html>
+    `;
+
+    res.send(htmlContent);
+
+  } catch (error) {
+    console.error('Error fetching company data:', error);
+    res.status(500).send('Error fetching company data');
+  }
+});
+
+async function fetchCompanyNews(symbol) {
+  try {
+    const response = await axios.get('https://newsapi.org/v2/everything', {
+      params: {
+        q: symbol,
+        apiKey: 'f5fdf1cdd17949d6ae4e321f74144f3d', 
+      }
+    });
+    return response.data; 
+  } catch (error) {
+    console.error('Error fetching news:', error);
+    return null;
+  }
+}
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

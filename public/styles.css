@@ -1,83 +1,118 @@
 /* Основни стилове за страницата */
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f4f9;
-    margin: 0;
-    padding: 0;
-  }
-  
-  h1 {
-    text-align: center;
-    color: #333;
-    margin-top: 20px;
-  }
-  
-  /* Създаваме фон за цялата страница */
-  table {
-    width: 90%;
-    margin: 30px auto;
-    border-collapse: collapse;
-    background-color: #fff;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  table th, table td {
-    padding: 12px 15px;
-    text-align: left;
-    border: 1px solid #ddd;
-  }
-  
-  table th {
-    background-color: #2d3e50;
-    color: #fff;
-    font-size: 16px;
-  }
-  
-  table td {
-    font-size: 14px;
-    color: #333;
-  }
-  
-  table tr:nth-child(even) {
-    background-color: #f2f2f2;
-  }
-  
-  table tr:hover {
-    background-color: #e1e1e1;
-    cursor: pointer;
-  }
-  
-  /* Падинг за тялото на страницата */
-  body {
-    padding: 20px;
-  }
-  
-  /* Изработка на навигационен бар */
-  .navbar {
-    background-color: #333;
-    padding: 10px;
-    text-align: center;
-  }
-  
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f9;
+  color: #333;
+}
+
+h1, h2 {
+  color: #2c3e50;
+}
+
+h1 {
+  margin-top: 20px;
+  text-align: center;
+}
+
+h2 {
+  font-size: 1.6em;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+table {
+  width: 80%;
+  margin: 20px auto;
+  border-collapse: collapse;
+  background-color: white;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+table th, table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+table th {
+  background-color: #2c3e50;
+  color: white;
+}
+
+table tr:hover {
+  background-color: #ecf0f1;
+}
+
+.news-item {
+  background-color: #fff;
+  margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.news-item h3 {
+  font-size: 1.3em;
+  margin: 0 0 10px 0;
+}
+
+.news-item a {
+  color: #2980b9;
+  text-decoration: none;
+}
+
+.news-item a:hover {
+  text-decoration: underline;
+}
+
+.news-item p {
+  font-size: 1em;
+  color: #7f8c8d;
+}
+
+.navbar {
+  background-color: #333;
+  padding: 15px 0;
+  text-align: center;
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.2em;
+  margin: 0 20px;
+}
+
+.navbar a:hover {
+  text-decoration: underline;
+}
+
+/* Стилове за футера */
+footer {
+  background-color: #333;
+  color: white;
+  padding: 15px 0;
+  text-align: center;
+  position: relative;
+  bottom: 0;
+  width: 100%;
+}
+
+/* Допълнителни стилове за реактивност */
+@media (max-width: 768px) {
   .navbar a {
-    color: #fff;
-    padding: 10px 20px;
-    text-decoration: none;
+    font-size: 1em;
     margin: 0 10px;
   }
-  
-  .navbar a:hover {
-    background-color: #575757;
-    border-radius: 5px;
+
+  table {
+    width: 95%;
   }
-  
-  footer {
-    background-color: #333;
-    color: white;
-    text-align: center;
-    padding: 10px 0;
-    left: 0;
-    bottom: 0;
-    width: 100%;
+
+  .news-item {
+    margin: 10px;
   }
-  
+}
