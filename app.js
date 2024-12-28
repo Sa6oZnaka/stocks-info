@@ -90,10 +90,10 @@ app.get('/', async (req, res) => {
     }
 
     htmlContent += `
-      <tr>
-        <td>${companyName}</td>
-        <td>${latestPrice}</td>
-      </tr>
+        <tr>
+          <td><a href="/company/${companyName}">${companyName}</a></td>
+          <td>${latestPrice}</td>
+        </tr>
     `;
   });
 
@@ -183,6 +183,54 @@ async function fetchCompanyNews(symbol) {
     return null;
   }
 }
+
+app.get('/news', async (req, res) => {
+  try {
+    const newsData = await fetchCompanyNews('stocks');
+
+    if (!newsData || !newsData.articles || newsData.articles.length === 0) {
+      return res.status(404).send('No news available at the moment.');
+    }
+
+    let newsHTML = '';
+    newsData.articles.slice(0, 20).forEach(article => {
+      newsHTML += `
+        <div class="news-item">
+          <h3><a href="${article.url}" target="_blank">${article.title}</a></h3>
+          <p>${article.description}</p>
+          <small>Published on: ${new Date(article.publishedAt).toLocaleString()}</small>
+        </div>
+      `;
+    });
+
+    let htmlContent = `
+      <html>
+        <head>
+          <title>Latest News</title>
+          <link rel="stylesheet" href="/styles.css">
+        </head>
+        <body>
+          <div class="navbar">
+            <a href="/">Home</a>
+            <a href="/news">News</a>
+          </div>
+          <h1>Latest News</h1>
+          <div class="news-container">
+            ${newsHTML}
+          </div>
+          <footer>
+            <p>&copy; 2024 Stock Data Inc. All rights reserved.</p>
+          </footer>
+        </body>
+      </html>
+    `;
+
+    res.send(htmlContent);
+  } catch (error) {
+    console.error('Error fetching news:', error);
+    res.status(500).send('Error fetching news');
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
