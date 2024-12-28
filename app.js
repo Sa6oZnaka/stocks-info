@@ -98,10 +98,13 @@ app.get('/', async (req, res) => {
   });
 
   htmlContent += `
-          </tbody>
-        </table>
-      </body>
-    </html>
+       </tbody>
+      </table>
+      <footer>
+        <p>&copy; 2024 Stock Data Inc. All rights reserved.</p>
+      </footer>
+    </body>
+  </html>
   `;
 
   res.send(htmlContent);
