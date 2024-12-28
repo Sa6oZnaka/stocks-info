@@ -18,6 +18,42 @@ const connection = mysql.createConnection({
   database: 'stocks_db'   
 });
 
+function getCompaniesAndLatestPrices() {
+  return new Promise((resolve, reject) => {
+    const query = `
+      SELECT 
+          c.id,
+          c.name,
+          c.symbol,
+          s.stock_price
+      FROM 
+          companies c
+      JOIN 
+          (
+              SELECT company_name, MAX(last_updated) AS latest_update
+              FROM stocks
+              GROUP BY company_name
+          ) latest_stock
+      ON 
+          c.symbol = latest_stock.company_name
+      JOIN 
+          stocks s 
+      ON 
+          s.company_name = latest_stock.company_name AND s.last_updated = latest_stock.latest_update
+      ORDER BY 
+          c.name;
+    `;
+    
+    connection.execute(query, (err, results) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
 function saveStockDataToDatabase(companyName, stockPrice) {
   const query = 'INSERT INTO stocks (company_name, stock_price) VALUES (?, ?)';
   
@@ -34,7 +70,7 @@ function saveStockDataToDatabase(companyName, stockPrice) {
 // API ключ от Alpha Vantage
 const API_KEY = '9UQKA2TTIKHPLTLZ'; 
 
-const companies = ['AAPL', 'GOOGL', 'AMZN', 'TSLA', 'MSFT', 'NFLX', 'FB', 'NVDA', 'BA', 'DIS'];
+const companiesToUpdate = ['AAPL', 'GOOGL', 'AMZN', 'TSLA', 'MSFT', 'NFLX', 'FB', 'NVDA', 'BA', 'DIS'];
 
 async function fetchStockData(symbol) {
   try {
@@ -55,10 +91,24 @@ async function fetchStockData(symbol) {
 
 app.get('/', async (req, res) => {
   try {
-    const stockDataPromises = companies.map(symbol => fetchStockData(symbol));
+    // update prices
+    const stockDataPromises = companiesToUpdate.map(symbol => fetchStockData(symbol));
     const stockData = await Promise.all(stockDataPromises);
 
     const successfulData = stockData.filter(data => data !== null);
+    successfulData.forEach(stock => {
+      const companyName = stock['Meta Data'] ? stock['Meta Data']['2. Symbol'] : 'Unknown';
+      const latestPrice = stock['Time Series (5min)'] ? stock['Time Series (5min)'][Object.keys(stock['Time Series (5min)'])[0]]['4. close'] : 'N/A';
+  
+      // Save
+      if (latestPrice !== 'N/A') {
+        console.log("Save to DB - " + companyName + " at " + latestPrice);
+        saveStockDataToDatabase(companyName, parseFloat(latestPrice));
+      }
+    });  
+
+
+    const companies = await getCompaniesAndLatestPrices();
 
     let htmlContent = `
     <html>
@@ -77,38 +127,28 @@ app.get('/', async (req, res) => {
             <tr><th>Company</th><th>Stock Price</th></tr>
           </thead>
           <tbody>
-  `;
+    `;
 
-  successfulData.forEach(stock => {
-    const companyName = stock['Meta Data'] ? stock['Meta Data']['2. Symbol'] : 'Unknown';
-    const latestPrice = stock['Time Series (5min)'] ? stock['Time Series (5min)'][Object.keys(stock['Time Series (5min)'])[0]]['4. close'] : 'N/A';
-
-    // Записваме в базата данни
-    if (latestPrice !== 'N/A') {
-      console.log("Save to DB - " + companyName + " at " + latestPrice);
-      saveStockDataToDatabase(companyName, parseFloat(latestPrice));
-    }
+    companies.forEach(company => {
+      htmlContent += `
+        <tr>
+          <td><a href="/company/${company.symbol}">${company.name}</a></td>
+          <td>${company.stock_price}</td>
+        </tr>
+      `;
+    });
 
     htmlContent += `
-        <tr>
-          <td><a href="/company/${companyName}">${companyName}</a></td>
-          <td>${latestPrice}</td>
-        </tr>
-    `;
-  });
-
-  htmlContent += `
        </tbody>
-      </table>
-      <footer>
-        <p>&copy; 2024 Stock Data Inc. All rights reserved.</p>
-      </footer>
-    </body>
-  </html>
-  `;
+        </table>
+        <footer>
+          <p>&copy; 2024 Stock Data Inc. All rights reserved.</p>
+        </footer>
+      </body>
+    </html>
+    `;
 
-  res.send(htmlContent);
-
+    res.send(htmlContent);
   } catch (error) {
     console.error('Error fetching stock data:', error);
     res.status(500).send('Error fetching stock data');
